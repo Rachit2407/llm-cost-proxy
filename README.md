@@ -57,15 +57,17 @@ Client App (OpenAI / Anthropic SDK)
    )
    ```
 
-4. Inspect cost savings, live budget, Prometheus metrics, or purge tenant cache:
+4. Inspect cost savings, live budget, Prometheus metrics, or open the visual Web Dashboard:
 
-   ```bash
-   curl http://localhost:8080/v1/stats
-   curl http://localhost:8080/v1/budget
-   curl http://localhost:8080/v1/models
-   curl http://localhost:8080/metrics
-   curl -X DELETE http://localhost:8080/v1/cache
-   ```
+   - **Visual Dashboard:** Open [http://localhost:8080/dashboard](http://localhost:8080/dashboard) in your browser.
+   - **Admin API:**
+     ```bash
+     curl http://localhost:8080/v1/stats
+     curl http://localhost:8080/v1/budget
+     curl http://localhost:8080/v1/models
+     curl http://localhost:8080/metrics
+     curl -X DELETE http://localhost:8080/v1/cache
+     ```
 
    Configure `ALERT_WEBHOOK_URL` and `ALERT_THRESHOLD_RATIO` (default `0.80`) to receive a deduplicated Slack-compatible webhook alert when a tenant crosses its monthly USD budget threshold.
 
