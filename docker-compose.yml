@@ -1,0 +1,55 @@
+services:
+  redis:
+    image: redis/redis-stack-server:7.4.0-v3
+    container_name: llm-cost-proxy-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: llm-cost-proxy-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-proxy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-proxy_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-llm_cost_proxy}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-proxy} -d ${POSTGRES_DB:-llm_cost_proxy}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llm-cost-proxy-api
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      PROXY_HOST: 0.0.0.0
+      PROXY_PORT: 8080
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-proxy}:${POSTGRES_PASSWORD:-proxy_dev_password}@postgres:5432/${POSTGRES_DB:-llm_cost_proxy}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      PROXY_API_KEYS_JSON: ${PROXY_API_KEYS_JSON:-{}}
+      ALLOW_ANONYMOUS_DEV: ${ALLOW_ANONYMOUS_DEV:-true}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-local_hash}
+      SEMANTIC_SIMILARITY_THRESHOLD: ${SEMANTIC_SIMILARITY_THRESHOLD:-0.90}
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
